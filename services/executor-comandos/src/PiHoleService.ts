@@ -332,6 +332,135 @@ const create_client = async function (client_name: string, group_id: string): Pr
     }
 }
 
+const remove_client_group = async function (sid: string, group_id: number): Promise<boolean> {
 
+    try {
+        //Pegando todos os dominios bloqueados
+        const response = await fetch(`${pihole_url}/domains/deny?sid=${sid}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Failed to get blocked domains');
+            return false;
+        }
+
+        const data = await response.json();
+        if(data && data['domains']) {
+            //Analisando o JSON -> pegando os domains
+            for(const domain of data['domains']) {
+                if(domain['groups'] && domain['groups'].includes(group_id)) {
+                    //verificando se o dominio possui os campos necessarios
+
+                    const grupos = domain['groups'];
+
+                    let payload = {};
+
+                    if(domain['type'] && domain['kind'] && domain['domain']) {
+                        const type = domain["type"]
+                        const kind = domain["kind"]
+                        const dominio = domain["domain"]
+
+                        if(grupos.length != 0) {
+                            console.log(`Domain: ${dominio}, Type: ${type}, Kind: ${kind}, Groups: ${grupos}`);
+                            const novo = grupos.filter((id: number) => id !== group_id);
+
+                            console.log(`"tamanho > 1 -> ", ${novo}`);
+
+                            payload = {"groups": novo};
+                        }
+
+                        const responseUpdated = await fetch(`${pihole_url}/domains//${type}/${kind}/${dominio}?sid=${sid}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!responseUpdated.ok) {
+                            console.error('Failed to update domain groups');
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error('Error removing client from group:', error);
+        return false;
+    }
+   
+}
+
+const remove_group = async function (group_name: string, client_name: string[]): Promise<boolean> {
+    //Para remover: 1° Remove o domain de bloqueio. 2° Remove o grupo do cliente
+    let sucesso = true;
+    let sid = '';
+
+    try {
+        sid = await create_session();
+        const id_group = await get_id_group(sid , group_name);
+
+        //Remover o grupo do cliente
+        const deletado = await remove_client_group(sid, id_group);
+
+        for(const macAddress of client_name) {
+            //Grupos do cliente
+            const grupos = await verificando_cliente(sid, macAddress);
+
+            if(grupos.includes(id_group)) {
+                //remover o grupo da lista de grupos do cliente
+                grupos.splice(grupos.indexOf(id_group), 1);
+
+                const response = await fetch(`${pihole_url}/clients/${macAddress}?sid=${sid}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({"groups": grupos})
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to update client groups');
+                    sucesso = false;
+                    break;     
+                }
+            }
+        }
+
+        if (deletado || client_name.length === 0 || sucesso) {
+            //Remover o grupo
+            const response = await fetch(`${pihole_url}/groups/${group_name}?sid=${sid}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                console.error('Failed to delete group');
+                return false;
+            }
+
+            const data = await response.json();
+
+            if(data && data['error']) sucesso = false;
+
+        }
+
+        return sucesso;
+        
+    }catch(error) {
+        console.error('Error removing client:', error);
+    }
+    return true;
+}
 
 module.exports = { addDomainBlockList, create_group, create_client}
