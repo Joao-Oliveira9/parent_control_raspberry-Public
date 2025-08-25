@@ -459,8 +459,10 @@ const remove_group = async function (group_name: string, client_name: string[]):
         
     }catch(error) {
         console.error('Error removing client:', error);
+        return false;
+    } finally {
+        if (sid) await delete_session(sid);
     }
-    return true;
 }
 
-module.exports = { addDomainBlockList, create_group, create_client}
+module.exports = { addDomainBlockList, create_group, create_client, remove_group }
