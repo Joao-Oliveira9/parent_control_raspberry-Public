@@ -465,4 +465,52 @@ const remove_group = async function (group_name: string, client_name: string[]):
     }
 }
 
-module.exports = { addDomainBlockList, create_group, create_client, remove_group }
+const remove_client = async function (client_name: string, group_name: string): Promise<boolean> {
+
+    let sid = '';
+    let sucesso = true;
+
+    try {
+        sid = await create_session();
+
+        const id_group = await get_id_group(sid , group_name);
+        const grupos = await verificando_cliente(sid, client_name);
+
+        if(grupos.includes(id_group)) {
+            //remover o grupo da lista de grupos do cliente
+            const idx = grupos.indexOf(id_group);
+            if (idx === -1) {
+                console.error('Client does not belong to the specified group');
+                return false;
+            }
+
+            grupos.splice(idx, 1);
+
+            const response = await fetch(`${pihole_url}/clients/${client_name}?sid=${sid}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({"groups": grupos})
+            });
+
+            if (!response.ok) {
+                console.error('Failed to update client groups');
+                return false;     
+            }
+
+            const data = await response.json();
+
+            if(data && data['error']) sucesso = false;
+
+        }
+        return sucesso;
+    } catch(error) {
+        console.error('Error removing client:', error);
+        return false;
+    } finally {
+        if (sid) await delete_session(sid);
+    }
+}
+
+module.exports = { addDomainBlockList, create_group, create_client, remove_group, remove_client }
