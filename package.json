@@ -1,0 +1,24 @@
+{
+  "name": "parent_control_raspberry-public",
+  "version": "1.0.0",
+  "description": "Sistema de bloqueio de sites para pais",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Joao-Oliveira9/parent_control_raspberry-Public.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Joao-Oliveira9/parent_control_raspberry-Public/issues"
+  },
+  "homepage": "https://github.com/Joao-Oliveira9/parent_control_raspberry-Public#readme",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  }
+}
