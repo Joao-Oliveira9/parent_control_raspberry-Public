@@ -288,9 +288,11 @@ const create_group = async function (group_name: string): Promise<boolean> {
     }
 }
 
-const create_client = async function (client_name: string, group_id: string): Promise<boolean> {
-    let sucesso = false;
+const create_client = async function (client_name: string, group_id: number): Promise<boolean[]> {
+    let sucesso = false; 
     let client_existe = false;
+
+    let resposta: boolean[] = [sucesso, client_existe];
 
     let sid = '';
 
@@ -308,7 +310,7 @@ const create_client = async function (client_name: string, group_id: string): Pr
 
         if (!response.ok) {
             console.error('Failed to create client');
-            return sucesso;
+            return resposta;
         }
 
         const data = await response.json();
@@ -322,11 +324,12 @@ const create_client = async function (client_name: string, group_id: string): Pr
             } 
         }
 
-        return sucesso;
+        resposta = [sucesso, client_existe];
+        return resposta;
 
     } catch (error) {
         console.error('Error creating client:', error);
-        return false;
+        return resposta;
     } finally {
         if (sid) await delete_session(sid);
     }
@@ -510,6 +513,24 @@ const remove_client = async function (client_name: string, group_name: string): 
         return false;
     } finally {
         if (sid) await delete_session(sid);
+    }
+}
+
+const insert_client_in_group = async function (client_name: string, group_name: string): Promise<boolean> {
+
+    try {
+        const id_group = await get_id_group(await create_session() , group_name);
+        const sucessoCreate = await create_client(client_name, id_group);
+
+        if(sucessoCreate[1]) {
+            console.error('Client already exists');
+            return false;
+        } else if(sucessoCreate[0]) return true;
+        else return false;
+        
+    } catch (error) {
+        console.error('Error inserting client in group:', error);
+        return false;
     }
 }
 
