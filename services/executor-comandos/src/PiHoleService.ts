@@ -244,3 +244,94 @@ const addDomainBlockList = async function (domain: string, group_name: string): 
     }
 }
 
+const create_group = async function (group_name: string): Promise<boolean> {
+
+    let sucesso = false;
+    let grupo_existe = false;
+
+    let sid = '';
+
+    try {
+        sid = await create_session();
+
+        const response = await fetch(`${pihole_url}/groups?sid=${sid}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ "name": group_name })
+        });
+
+        if (!response.ok) {
+            console.error('Failed to create group');
+            return sucesso;
+        }
+
+        const data = await response.json();
+
+        if(data && data['processed']) {
+            const errors = data['processed']['errors'];
+
+            if (Array.isArray(errors)){
+                if (errors.length === 0) sucesso = true;
+                else if(errors[0]['error'] === 'UNIQUE constraint failed: group.name') grupo_existe = true;    
+            } 
+        }
+
+        return sucesso;
+
+    } catch (error) {
+        console.error('Error creating group:', error);
+        return false;
+    } finally {
+        if (sid) await delete_session(sid);
+    }
+}
+
+const create_client = async function (client_name: string, group_id: string): Promise<boolean> {
+    let sucesso = false;
+    let client_existe = false;
+
+    let sid = '';
+
+    try {
+        sid = await create_session();
+        const grupos = await verificando_cliente(sid, client_name);
+
+        const response = await fetch(`${pihole_url}/clients?sid=${sid}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ "name": client_name, "group": group_id })
+        });
+
+        if (!response.ok) {
+            console.error('Failed to create client');
+            return sucesso;
+        }
+
+        const data = await response.json();
+
+        if(data && data['processed']) {
+            const errors = data['processed']['errors'];
+
+            if (Array.isArray(errors)){
+                if (errors.length === 0) sucesso = true;
+                else if(errors[0]['error'] === 'UNIQUE constraint failed: client.name') client_existe = true;    
+            } 
+        }
+
+        return sucesso;
+
+    } catch (error) {
+        console.error('Error creating client:', error);
+        return false;
+    } finally {
+        if (sid) await delete_session(sid);
+    }
+}
+
+
+
+module.exports = { addDomainBlockList, create_group, create_client}
