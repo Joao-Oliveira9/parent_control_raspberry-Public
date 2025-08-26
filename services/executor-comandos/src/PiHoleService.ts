@@ -244,11 +244,13 @@ export const addDomainBlockList = async function (domain: string, group_name: st
     }
 }
 
-export const create_group = async function (group_name: string): Promise<boolean> {
+export const create_group = async function (group_name: string): Promise<boolean[]> {
 
     let sucesso = false;
     let grupo_existe = false;
 
+    let resultado: boolean[] = [sucesso, grupo_existe];
+    
     let sid = '';
 
     try {
@@ -264,7 +266,7 @@ export const create_group = async function (group_name: string): Promise<boolean
 
         if (!response.ok) {
             console.error('Failed to create group');
-            return sucesso;
+            return resultado;
         }
 
         const data = await response.json();
@@ -278,11 +280,12 @@ export const create_group = async function (group_name: string): Promise<boolean
             } 
         }
 
-        return sucesso;
+        resultado = [sucesso, grupo_existe];
+        return resultado;
 
     } catch (error) {
         console.error('Error creating group:', error);
-        return false;
+        return [false, false];
     } finally {
         if (sid) await delete_session(sid);
     }
