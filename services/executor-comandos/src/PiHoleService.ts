@@ -169,7 +169,7 @@ const verificando_cliente = async function (sid: string, client_name: string): P
     }
 }
 
-const addDomainBlockList = async function (domain: string, group_name: string): Promise<boolean> {
+export const addDomainBlockList = async function (domain: string, group_name: string): Promise<boolean> {
 
     let sid = '';
 
@@ -244,7 +244,7 @@ const addDomainBlockList = async function (domain: string, group_name: string): 
     }
 }
 
-const create_group = async function (group_name: string): Promise<boolean> {
+export const create_group = async function (group_name: string): Promise<boolean> {
 
     let sucesso = false;
     let grupo_existe = false;
@@ -288,7 +288,7 @@ const create_group = async function (group_name: string): Promise<boolean> {
     }
 }
 
-const create_client = async function (client_name: string, group_id: number): Promise<boolean[]> {
+export const create_client = async function (client_name: string, group_id: number): Promise<boolean[]> {
     let sucesso = false; 
     let client_existe = false;
 
@@ -335,7 +335,7 @@ const create_client = async function (client_name: string, group_id: number): Pr
     }
 }
 
-const remove_client_group = async function (sid: string, group_id: number): Promise<boolean> {
+export const remove_client_group = async function (sid: string, group_id: number): Promise<boolean> {
 
     try {
         //Pegando todos os dominios bloqueados
@@ -402,7 +402,7 @@ const remove_client_group = async function (sid: string, group_id: number): Prom
    
 }
 
-const remove_group = async function (group_name: string, client_name: string[]): Promise<boolean> {
+export const remove_group = async function (group_name: string, client_name: string[]): Promise<boolean> {
     //Para remover: 1° Remove o domain de bloqueio. 2° Remove o grupo do cliente
     let sucesso = true;
     let sid = '';
@@ -468,7 +468,7 @@ const remove_group = async function (group_name: string, client_name: string[]):
     }
 }
 
-const remove_client = async function (client_name: string, group_name: string): Promise<boolean> {
+export const remove_client = async function (client_name: string, group_name: string): Promise<boolean> {
 
     let sid = '';
     let sucesso = true;
@@ -516,7 +516,7 @@ const remove_client = async function (client_name: string, group_name: string): 
     }
 }
 
-const insert_client_in_group = async function (client_name: string, group_name: string): Promise<boolean> {
+export const insert_client_in_group = async function (client_name: string, group_name: string): Promise<boolean> {
 
     try {
         const id_group = await get_id_group(await create_session() , group_name);
@@ -533,5 +533,3 @@ const insert_client_in_group = async function (client_name: string, group_name: 
         return false;
     }
 }
-
-module.exports = { addDomainBlockList, create_group, create_client, remove_group, remove_client }
