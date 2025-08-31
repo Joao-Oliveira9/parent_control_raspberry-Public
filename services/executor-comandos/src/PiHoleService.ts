@@ -169,6 +169,42 @@ const verificando_cliente = async function (sid: string, client_name: string): P
     }
 }
 
+export const query_register = async function (address: string, length: number): Promise<any> {
+    let sid = '';
+
+    try {
+        sid = await create_session();
+
+        const client_ip = address; //arp_scan retorna o ip com a mascara
+
+        if(!client_ip) {
+            console.error('Client IP not found');
+            return {};
+        }
+
+        const response = await fetch(`${pihole_url}/queries?sid=${sid}&length=${length}&domain=www.*&client_ip=${client_ip}&type=AAAA`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Failed to get register');
+            return {};
+        } else {
+            return response.json();
+        }
+
+
+    } catch (error) {
+        console.error('Error getting register:', error);
+        return {};
+    } finally {
+        if (sid) await delete_session(sid);
+    }
+}
+
 export const addDomainBlockList = async function (domain: string, group_name: string): Promise<boolean> {
 
     let sid = '';
