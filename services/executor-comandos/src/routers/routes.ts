@@ -48,13 +48,13 @@ router.post('/bloquear', async (req: Request, res: Response) => {
 
     if (dominio) {
 
-        if(!dominio['domain-name'] || !dominio['group_name']){
+        if(!dominio['domain-name'] || !dominio['group-name']){
             res.status(400).json({ "message": 'Parâmetros inválidos', "status": "erro" });
             return; 
         }
 
         const nome = dominio['domain-name'] as string;
-        const group = dominio['group_name'] as string;
+        const group = dominio['group-name'] as string;
 
         const response = await addDomainBlockList(nome, group);
 
