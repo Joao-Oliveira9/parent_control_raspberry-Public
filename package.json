@@ -1,6 +1,5 @@
 {
   "name": "parent_control_raspberry-public",
-  "type": "module",
   "version": "1.0.0",
   "description": "Sistema de bloqueio de sites para pais",
   "main": "index.js",
@@ -26,6 +25,8 @@
   "dependencies": {
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "node-fetch": "^3.3.2"
+    "mariadb": "^3.4.5",
+    "node-fetch": "^3.3.2",
+    "sequelize": "^6.37.7"
   }
 }

@@ -3,7 +3,9 @@
 // import { METHODS } from 'http';
 
 // dotenv.config();
-import { Log } from "../model/log.js";
+import log from "../model/log-db-model.js";
+import { Log } from "../model/log";
+
 // const app = express();
 
 //definicao das rotas
@@ -45,29 +47,52 @@ export class UtilsRoutes {
       `http://192.168.15.2/api/queries?domain=*.com.br&type=AAAA&status=FORWARDED`,
     ];
 
-    const data = await Promise.all(
-      urls.map((url) =>
-        fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            sid: `${token}`,
-          },
-        })
-          .then((res) => res.json())
-          .then((res) => {
-            const arrayQueries = res.queries;
-            return arrayQueries.filter((element: { domain: string }) =>
-              regexValido.test(element.domain)
-            );
+    const data = (
+      await Promise.all(
+        urls.map((url) =>
+          fetch(url, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              sid: `${token}`,
+            },
           })
+            .then((res) => res.json())
+            .then((res) => {
+              const arrayQueries = res.queries;
+              return arrayQueries.filter((element: { domain: string }) =>
+                regexValido.test(element.domain)
+              );
+            })
+        )
       )
-    );
+    ).flat();
 
-    console.log(JSON.stringify(data, null, 2));
+    const logs = data.map((element) => {
+      console.log(element.timestamp);
+      const logV: Log = {
+        timestamp: element.time,
+        domain: element.domain,
+        client: {
+          ip: element.client.ip,
+          name: element.client.name,
+        },
+      };
+      return logV;
+    });
+
+    logs.forEach((element) => {
+      log.create({
+        Domain: element.domain,
+        Ip: element.client.ip,
+        Name: element.client.name,
+      });
+    });
+
+    console.log(typeof logs);
+    console.log(logs);
     this.cancelSid(token);
 
-    return data as unknown as Log[];
+    return data;
   }
 }
-
