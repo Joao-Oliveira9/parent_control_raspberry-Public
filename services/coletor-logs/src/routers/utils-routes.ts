@@ -9,6 +9,7 @@ export class UtilsRoutes {
   payload: { method: string; headers: { "Content-Type": string }; body: string };
 
   constructor() {
+    console.log("alo")
     this.payload = {
       method: "POST",
       headers: {
@@ -43,7 +44,8 @@ export class UtilsRoutes {
       `http://192.168.15.2/api/queries?domain=*.com.br&type=AAAA&status=FORWARDED`,
     ];
 
-    const regexValido = /^(www\.)?[a-zA-Z0-9-]+(\.com(\.br)?)$/;
+    const regexValido = /^(www\.)?[a-zA-Z0-9-]+\.(com|org)(\.br)?$/
+
 
     const data = (
       await Promise.all(
@@ -79,14 +81,31 @@ export class UtilsRoutes {
       order: [["lastTimestamp", "DESC"]],
     });
 
-    const ultimoTimestamp: number = ultimoRegistro
-      ? (ultimoRegistro.get("lastTimestamp") as number)
-      : 0;
+const ultimoTimestamp: bigint = ultimoRegistro
+  ? BigInt(ultimoRegistro.get("lastTimestamp") as string | number | bigint)
+  : 0n;
 
-    const novosLogs = logs.filter((l) => l.timestamp > ultimoTimestamp);
+
+    console.log("meuszovo"+ultimoTimestamp)
+
+const seen = new Set();
+
+const novosLogs = logs
+  .map((l) => ({ ...l, timestamp: Math.floor(l.timestamp) })) // uniformiza
+  .filter((l) => l.timestamp > ultimoTimestamp)
+  .filter((l) => {
+    if (seen.has(l.timestamp)) return false;
+    seen.add(l.timestamp);
+    return true;
+  });
+
+
+
+      console.log("novosLogs"+novosLogs)
+
 
     console.log(`Total recebido: ${logs.length}`);
-    console.log(`Novos a inserir: ${novosLogs.length}`);
+    console.log(`Novos a inserir1: ${novosLogs.length}`);
 
     for (const element of novosLogs) {
       await log.create({
@@ -99,6 +118,7 @@ export class UtilsRoutes {
 
     if (novosLogs.length > 0) {
       const maxTimestamp = Math.max(...novosLogs.map((l) => l.timestamp));
+      console.log("maxTimestamp" + maxTimestamp)
       if (ultimoRegistro) {
         await ultimoRegistro.update({ lastTimestamp: maxTimestamp });
       } else {
@@ -110,8 +130,9 @@ export class UtilsRoutes {
   }
 
   startCron() {
-    console.log("passei aqui")
-    cron.schedule("*/15 * * * *", async () => {
+    console.log("passei aqui123")
+   
+    cron.schedule("*/30 * * * * *", async () => {
       console.log("Execução automática iniciada:", new Date().toLocaleString());
       try {
         const token = await this.getSid();
