@@ -9,7 +9,7 @@ const log = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    Ip: {
+    Mac: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -27,4 +27,5 @@ const log = sequelize.define(
   }
 );
 
+log.sync();
 export default log;

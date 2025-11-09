@@ -2,7 +2,7 @@ import { Sequelize } from "sequelize";
 
 console.log("database-connection carregado");
 
-const sequelize = new Sequelize("logs_database", "joao", "root", {
+const sequelize = new Sequelize("logs_database", "root", "root", {
   host: "localhost",
   dialect: "mariadb",
 });

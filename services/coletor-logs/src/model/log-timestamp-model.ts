@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../../database/database-connection.js";
+import { log } from "console";
 
 const logTimestampModel = sequelize.define("log_timestamp", {
   id: {
@@ -17,4 +18,5 @@ const logTimestampModel = sequelize.define("log_timestamp", {
   timestamps: false             
 });
 
+logTimestampModel.sync();
 export default logTimestampModel;

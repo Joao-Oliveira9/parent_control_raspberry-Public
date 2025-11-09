@@ -1,9 +1,10 @@
 import log from "../../coletor-logs/src/model/log-db-model";
 
 
-export async function handleGetLogs(correlationId: any): Promise<any> {
+export async function handleGetLogs(macAddress: string, correlationId: any): Promise<any> {
   try {
     const logs = await log.findAll({
+      where: {Mac: macAddress},
       order: [["Timestamp", "DESC"]], 
     });
 
