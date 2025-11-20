@@ -1,7 +1,9 @@
+import { group } from "console";
+
 const pihole_url = 'http://192.168.0.21/api'; //depois colocar no .env
 const password = 'y8q3CW6u'; //depois colocar no .env
 
-const create_session = async function (): Promise<string> {
+export const create_session = async function (): Promise<string> {
     try {
 
         let sid = '';
@@ -37,7 +39,7 @@ const create_session = async function (): Promise<string> {
 
 }
 
-const delete_session = async function (sid: string): Promise<void> {
+export const delete_session = async function (sid: string): Promise<void> {
 
     try {
         const response = await fetch(`${pihole_url}/auth?sid=${sid}`, {
@@ -56,7 +58,7 @@ const delete_session = async function (sid: string): Promise<void> {
     }
 }
 
-const get_id_group = async function (sid: string, group_name: string): Promise<number> {
+export const get_id_group = async function (sid: string, group_name: string): Promise<number> {
     try {
 
         let group_id = -1; //default group
@@ -89,7 +91,7 @@ const get_id_group = async function (sid: string, group_name: string): Promise<n
     }
 }
 
-const verificar_dominio = async function (domain_name: string, sid: string): Promise<[boolean, number[]]> {
+export const verificar_dominio = async function (domain_name: string, sid: string): Promise<[boolean, number[]]> {
 
     try {
         let resposta: [boolean, number[]] = [false, []];
@@ -114,7 +116,7 @@ const verificar_dominio = async function (domain_name: string, sid: string): Pro
                 if(domain['domain'] === domain_name) {
                     //grupos pertencentes a esse dominio
                     if(domain['groups']) {
-			resposta = [true, domain['groups']]; 
+			            resposta = [true, domain['groups']]; 
                         break;
 		    }
                 }
@@ -129,7 +131,7 @@ const verificar_dominio = async function (domain_name: string, sid: string): Pro
     }
 }
 
-const verificando_cliente = async function (sid: string, client_name: string): Promise<any> {
+export const verificando_cliente = async function (sid: string, client_name: string): Promise<any> {
     let grupos: number[] = [];
     let existe: boolean = false;
 
@@ -144,7 +146,7 @@ const verificando_cliente = async function (sid: string, client_name: string): P
 
         if (!response.ok) {
             console.error('Failed to get clients');
-	    return { grupos: [-1], existe: false };
+	        return { grupos: [-1], existe: false };
         } 
 
         const data = await response.json();
@@ -183,22 +185,26 @@ export const addDomainBlockList = async function (domain: string, group_name: st
     let sucesso = false;
 
     try {
-        const sid = await create_session();
+        sid = await create_session();
         const id_group = await get_id_group(sid , group_name);
         
         // verificar se o dominio ja esta na lista de bloqueados em algum outro grupo
         const [existeDominio, grupos] = await verificar_dominio(domain, sid);
 	
-	console.log(existeDominio);
-	console.log(grupos);
+	    console.log(existeDominio);
+	    console.log(grupos);
 
         if(existeDominio) {
             //se ja existe, verificar se nao esta no grupo
             if(!grupos.includes(id_group)) {
-		console.log("Nao esta no grupo");
+		        console.log("Nao esta no grupo");
                 //se nao esta no grupo, adicionar o grupo a lista de grupos do dominio
                 grupos.push(id_group);
-		console.log(grupos);
+                const novoGrupo = grupos.filter(g => g !== 0);
+
+                console.log("Novos grupos:");
+                console.log(novoGrupo);
+		        console.log(grupos);
                 //fazer o update do dominio com os novos grupos
                 const response = await fetch(`${pihole_url}/domains/deny/exact/${domain}?sid=${sid}`, {
                     method: 'PUT',
@@ -252,9 +258,87 @@ export const addDomainBlockList = async function (domain: string, group_name: st
     }
 }
 
+export const unblockDomain = async function (domain: string, group_name: string): Promise<boolean> {
+
+    let sid = '';
+
+    let sucesso = false;
+
+    try {
+        sid = await create_session();
+        const id_group = await get_id_group(sid, group_name);
+
+        console.log(domain);
+        console.log(group_name);
+
+        // verificar se o dominio ja esta na lista de bloqueados em algum outro grupo
+        const [existeDominio, grupos] = await verificar_dominio(domain, sid);
+
+        console.log(existeDominio);
+        console.log(grupos);
+
+        if(existeDominio) {
+            if(grupos.includes(id_group)) {
+                //se nao esta no grupo, adicionar o grupo a lista de grupos do dominio
+                const novosGrupos = grupos.filter(g => g !== id_group);
+                console.log(grupos);
+                console.log(novosGrupos);
+
+                if(novosGrupos.length === 0) {
+                    //remover o dominio da lista de bloqueios
+                    console.log("length === 0");
+
+                    console.log(`${pihole_url}/domains/deny/exact/${domain}?sid=${sid}`);
+                    const response = await fetch(`${pihole_url}/domains/deny/exact/${domain}?sid=${sid}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        console.error('Failed to remove domain from block list');
+                        return sucesso;
+                    }
+
+                    sucesso = true;
+                    return sucesso;
+                }
+                //fazer o update do dominio com os novos grupos
+                const response = await fetch(`${pihole_url}/domains/deny/exact/${domain}?sid=${sid}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({groups: novosGrupos, "enabled": true})
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to update domain groups');
+                    return sucesso;
+                }
+
+                sucesso = true;
+            }
+
+        } else if(grupos.length === 1 && grupos[0] === -1){
+            console.error('Error verifying domain groups');
+            return sucesso; //erro ao verificar dominio
+
+        }
+
+        return sucesso;
+    } catch (error) {
+        console.error('Error adding domain to block list:', error);
+        return false;
+    } finally {
+        if (sid) await delete_session(sid);
+    }
+}
+
+
 export const create_group = async function (group_name: string): Promise<boolean[]> {
 
-    console.log("oi");
     let sucesso = false;
     let grupo_existe = false;
 
@@ -324,7 +408,7 @@ export const create_client = async function (client_name: string, group_id: numb
         if(grupos.length === 0 && existe === false) {
             //cliente nao existe
             grupos.push(group_id);
-	    console.log(grupos);            
+	        console.log(grupos);            
 
             const response = await fetch(`${pihole_url}/clients?sid=${sid}`, {
                 method: 'POST',
@@ -350,11 +434,11 @@ export const create_client = async function (client_name: string, group_id: numb
                 } 
             }
         } else {
-	    console.log("cliente existe");
+	        console.log("cliente existe");
             if(!grupos.includes(group_id)) {
                 //adicionar o grupo a lista de grupos do cliente
                 grupos.push(group_id);
-		console.log(grupos);
+		        console.log(grupos);
 
                 const response = await fetch(`${pihole_url}/clients/${client_name}?sid=${sid}`, {
                     method: 'PUT',
@@ -488,7 +572,7 @@ export const remove_group = async function (group_name: string, client_name: str
 
         if (deletado || client_name.length === 0 || sucesso) {
             //Remover o grupo
-	    console.log("vou deletar!");
+	        console.log("vou deletar!");
             const response = await fetch(`${pihole_url}/groups/${group_name}?sid=${sid}`, {
                 method: 'DELETE',
                 headers: {
@@ -496,7 +580,7 @@ export const remove_group = async function (group_name: string, client_name: str
                 }
             });
 
-	    console.log(JSON.stringify(response));
+	        console.log(JSON.stringify(response));
 
             if (!response.ok) {
                 console.error('Failed to delete group');

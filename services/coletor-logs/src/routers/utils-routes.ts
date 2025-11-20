@@ -1,9 +1,10 @@
 // import log from "../model/log-db-model.js";
-import log from "../model/log-db-model.js";
+import log from "../model/log-db-model";
 // import logTimestampModel from "../model/log-timestamp-model.js";
-import logTimestampModel from "../model/log-timestamp-model.js";
-import arp from "node-arp";
+import logTimestampModel from "../model/log-timestamp-model";
 import cron from "node-cron";
+
+const arp = require("node-arp");
 
 const pihole_url = 'http://192.168.0.21/api';
 const password = "y8q3CW6u"
